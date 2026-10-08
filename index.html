@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diary Tanaman Saya 🌿</title>
+  <style>
+    :root {
+      --bg-color: #f4f8f5;
+      --card-bg: #ffffff;
+      --primary: #2e7d32;
+      --primary-hover: #1b5e20;
+      --text: #2c3e50;
+      --subtext: #666666;
+      --border: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      color: var(--primary);
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      color: var(--subtext);
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--text);
+    }
+
+    .form-group input, 
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .diary-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .diary-item {
+      background: var(--card-bg);
+      border-left: 5px solid var(--primary);
+      border-radius: 8px;
+      padding: 15px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      position: relative;
+    }
+
+    .diary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .plant-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .entry-date {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+
+    .diary-note {
+      color: var(--text);
+      white-space: pre-line;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #e53935;
+      font-size: 0.85rem;
+      cursor: pointer;
+      width: auto;
+      padding: 0;
+      margin-top: 10px;
+      text-align: left;
+    }
+
+    .delete-btn:hover {
+      background: none;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🌱 Diary Tanaman Saya</h1>
+      <p>Catat perkembangan dan perawatan tanaman kesayanganmu</p>
+    </header>
+
+    <!-- Form Input Catatan -->
+    <div class="card">
+      <form id="plantForm">
+        <div class="form-group">
+          <label for="plantName">Nama Tanaman</label>
+          <input type="text" id="plantName" placeholder="Contoh: Janda Bolong, Aglonema" required>
+        </div>
+        <div class="form-group">
+          <label for="entryDate">Tanggal Hari Ini</label>
+          <input type="date" id="entryDate" required>
+        </div>
+        <div class="form-group">
+          <label for="plantNote">Catatan / Perkembangan</label>
+          <textarea id="plantNote" placeholder="Contoh: Disiram pagi hari, muncul tunas daun baru!" required></textarea>
+        </div>
+        <button type="submit">Tambah Catatan 🌿</button>
+      </form>
+    </div>
+
+    <!-- Daftar Catatan -->
+    <h2>Riwayat Catatan</h2>
+    <div class="diary-list" id="diaryList"></div>
+  </div>
+
+  <script>
+    const plantForm = document.getElementById('plantForm');
+    const diaryList = document.getElementById('diaryList');
+
+    // Set tanggal default ke hari ini
+    document.getElementById('entryDate').valueAsDate = new Date();
+
+    // Ambil data dari localStorage saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', loadEntries);
+
+    plantForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('plantName').value;
+      const date = document.getElementById('entryDate').value;
+      const note = document.getElementById('plantNote').value;
+
+      const entry = {
+        id: Date.now(),
+        name,
+        date,
+        note
+      };
+
+      saveEntry(entry);
+      renderEntry(entry);
+
+      // Reset form
+      document.getElementById('plantName').value = '';
+      document.getElementById('plantNote').value = '';
+      document.getElementById('entryDate').valueAsDate = new Date();
+    });
+
+    function saveEntry(entry) {
+      const entries = getEntries();
+      entries.unshift(entry);
+      localStorage.setItem('plantEntries', JSON.stringify(entries));
+    }
+
+    function getEntries() {
+      return localStorage.getItem('plantEntries') 
+        ? JSON.parse(localStorage.getItem('plantEntries')) 
+        : [];
+    }
+
+    function loadEntries() {
+      const entries = getEntries();
+      diaryList.innerHTML = '';
+      entries.forEach(renderEntry);
+    }
+
+    function renderEntry(entry) {
+      const div = document.createElement('div');
+      div.className = 'diary-item';
+      div.setAttribute('data-id', entry.id);
+
+      div.innerHTML = `
+        <div class="diary-header">
+          <span class="plant-name">🪴 ${escapeHtml(entry.name)}</span>
+          <span class="entry-date">${entry.date}</span>
+        </div>
+        <p class="diary-note">${escapeHtml(entry.note)}</p>
+        <button class="delete-btn" onclick="deleteEntry(${entry.id})">Hapus Catatan</button>
+      `;
+
+      diaryList.appendChild(div);
+    }
+
+    function deleteEntry(id) {
+      let entries = getEntries();
+      entries = entries.filter(entry => entry.id !== id);
+      localStorage.setItem('plantEntries', JSON.stringify(entries));
+      loadEntries();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
